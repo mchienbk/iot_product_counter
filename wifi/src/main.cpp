@@ -1,156 +1,151 @@
+// Load Wi-Fi library
+
 #include <ESP8266WiFi.h>
-#include <WiFiClient.h>
-#include <ESP8266WebServer.h>
-#include <ESP8266mDNS.h>
 
-#ifndef STASSID
-#define STASSID "Wireless-HN"
-#define STAPSK  "vohongnhi"
-#endif
+// Replace with your network credentials
+const char* ssid     = "Wireless-HN";
+const char* password = "vohongnhi";
 
-const char* ssid = STASSID;
-const char* password = STAPSK;
+// Set web server port number to 80
+WiFiServer server(80);
 
-ESP8266WebServer server(80);
+// Variable to store the HTTP request
+String header;
 
-const int led = 14;
+// Auxiliar variables to store the current output state
+String output5State = "off";
+String output4State = "off";
 
-void handleRoot() {
-  digitalWrite(led, 1);
-  server.send(200, "text/plain", "hello from esp8266!\r\n");
-  digitalWrite(led, 0);
-}
+// Assign output variables to GPIO pins
+const int output5 = 5;
+const int output4 = 4;
 
-void handleNotFound() {
-  digitalWrite(led, 1);
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++) {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
-  digitalWrite(led, 0);
-}
+// Current time
+unsigned long currentTime = millis();
+// Previous time
+unsigned long previousTime = 0; 
+// Define timeout time in milliseconds (example: 2000ms = 2s)
+const long timeoutTime = 2000;
 
-void setup(void) {
-  pinMode(led, OUTPUT);
-  digitalWrite(led, 0);
-  Serial.begin(115200);
-  WiFi.mode(WIFI_STA);
+void setup() {
+  Serial.begin(9600);
+  // Initialize the output variables as outputs
+  pinMode(output5, OUTPUT);
+  pinMode(output4, OUTPUT);
+  // Set outputs to LOW
+  digitalWrite(output5, LOW);
+  digitalWrite(output4, LOW);
+  delay(2000);
+  // Connect to Wi-Fi network with SSID and password
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
   WiFi.begin(ssid, password);
-  Serial.println("");
-
-  // Wait for connection
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
-    Serial.print(".");
+    Serial.print("+");
   }
+  // Print local IP address and start web server
   Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
+  Serial.println("WiFi connected.");
+  Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
-
-  if (MDNS.begin("esp8266")) {
-    Serial.println("MDNS responder started");
-  }
-
-  server.on("/", handleRoot);
-
-  server.on("/inline", []() {
-    server.send(200, "text/plain", "this works as well");
-  });
-
-  server.on("/gif", []() {
-    static const uint8_t gif[] PROGMEM = {
-      0x47, 0x49, 0x46, 0x38, 0x37, 0x61, 0x10, 0x00, 0x10, 0x00, 0x80, 0x01,
-      0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0xff, 0x2c, 0x00, 0x00, 0x00, 0x00,
-      0x10, 0x00, 0x10, 0x00, 0x00, 0x02, 0x19, 0x8c, 0x8f, 0xa9, 0xcb, 0x9d,
-      0x00, 0x5f, 0x74, 0xb4, 0x56, 0xb0, 0xb0, 0xd2, 0xf2, 0x35, 0x1e, 0x4c,
-      0x0c, 0x24, 0x5a, 0xe6, 0x89, 0xa6, 0x4d, 0x01, 0x00, 0x3b
-    };
-    char gif_colored[sizeof(gif)];
-    memcpy_P(gif_colored, gif, sizeof(gif));
-    // Set the background to a random set of colors
-    gif_colored[16] = millis() % 256;
-    gif_colored[17] = millis() % 256;
-    gif_colored[18] = millis() % 256;
-    server.send(200, "image/gif", gif_colored, sizeof(gif_colored));
-  });
-
-  server.onNotFound(handleNotFound);
-
-  /////////////////////////////////////////////////////////
-  // Hook examples
-
-  server.addHook([](const String & method, const String & url, WiFiClient * client, ESP8266WebServer::ContentTypeFunction contentType) {
-    (void)method;      // GET, PUT, ...
-    (void)url;         // example: /root/myfile.html
-    (void)client;      // the webserver tcp client connection
-    (void)contentType; // contentType(".html") => "text/html"
-    Serial.printf("A useless web hook has passed\n");
-    Serial.printf("(this hook is in 0x%08x area (401x=IRAM 402x=FLASH))\n", esp_get_program_counter());
-    return ESP8266WebServer::CLIENT_REQUEST_CAN_CONTINUE;
-  });
-
-  server.addHook([](const String&, const String & url, WiFiClient*, ESP8266WebServer::ContentTypeFunction) {
-    if (url.startsWith("/fail")) {
-      Serial.printf("An always failing web hook has been triggered\n");
-      return ESP8266WebServer::CLIENT_MUST_STOP;
-    }
-    return ESP8266WebServer::CLIENT_REQUEST_CAN_CONTINUE;
-  });
-
-  server.addHook([](const String&, const String & url, WiFiClient * client, ESP8266WebServer::ContentTypeFunction) {
-    if (url.startsWith("/dump")) {
-      Serial.printf("The dumper web hook is on the run\n");
-
-      // Here the request is not interpreted, so we cannot for sure
-      // swallow the exact amount matching the full request+content,
-      // hence the tcp connection cannot be handled anymore by the
-      // webserver.
-#ifdef STREAMTO_API
-      // we are lucky
-      client->toWithTimeout(Serial, 500);
-#else
-      auto last = millis();
-      while ((millis() - last) < 500) {
-        char buf[32];
-        size_t len = client->read((uint8_t*)buf, sizeof(buf));
-        if (len > 0) {
-          Serial.printf("(<%d> chars)", (int)len);
-          Serial.write(buf, len);
-          last = millis();
-        }
-      }
-#endif
-      // Two choices: return MUST STOP and webserver will close it
-      //                       (we already have the example with '/fail' hook)
-      // or                  IS GIVEN and webserver will forget it
-      // trying with IS GIVEN and storing it on a dumb WiFiClient.
-      // check the client connection: it should not immediately be closed
-      // (make another '/dump' one to close the first)
-      Serial.printf("\nTelling server to forget this connection\n");
-      static WiFiClient forgetme = *client; // stop previous one if present and transfer client refcounter
-      return ESP8266WebServer::CLIENT_IS_GIVEN;
-    }
-    return ESP8266WebServer::CLIENT_REQUEST_CAN_CONTINUE;
-  });
-
-  // Hook examples
-  /////////////////////////////////////////////////////////
-
   server.begin();
-  Serial.println("HTTP server started");
 }
 
-void loop(void) {
-  server.handleClient();
-  MDNS.update();
+void loop(){
+  WiFiClient client = server.available();   // Listen for incoming clients
+
+  if (client) {                             // If a new client connects,
+    Serial.println("New Client.");          // print a message out in the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    currentTime = millis();
+    previousTime = currentTime;
+    while (client.connected() && currentTime - previousTime <= timeoutTime) { // loop while the client's connected
+      currentTime = millis();         
+      if (client.available()) {             // if there's bytes to read from the client,
+        char c = client.read();             // read a byte, then
+        Serial.write(c);                    // print it out the serial monitor
+        header += c;
+        if (c == '\n') {                    // if the byte is a newline character
+          // if the current line is blank, you got two newline characters in a row.
+          // that's the end of the client HTTP request, so send a response:
+          if (currentLine.length() == 0) {
+            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+            // and a content-type so the client knows what's coming, then a blank line:
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type:text/html");
+            client.println("Connection: close");
+            client.println();
+            
+            // turns the GPIOs on and off
+            if (header.indexOf("GET /5/on") >= 0) {
+              Serial.println("GPIO 5 on");
+              output5State = "on";
+              digitalWrite(output5, HIGH);
+            } else if (header.indexOf("GET /5/off") >= 0) {
+              Serial.println("GPIO 5 off");
+              output5State = "off";
+              digitalWrite(output5, LOW);
+            } else if (header.indexOf("GET /4/on") >= 0) {
+              Serial.println("GPIO 4 on");
+              output4State = "on";
+              digitalWrite(output4, HIGH);
+            } else if (header.indexOf("GET /4/off") >= 0) {
+              Serial.println("GPIO 4 off");
+              output4State = "off";
+              digitalWrite(output4, LOW);
+            }
+            
+            // Display the HTML web page
+            client.println("<!DOCTYPE html><html>");
+            client.println("<head><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">");
+            client.println("<link rel=\"icon\" href=\"data:,\">");
+            // CSS to style the on/off buttons 
+            // Feel free to change the background-color and font-size attributes to fit your preferences
+            client.println("<style>html { font-family: Helvetica; display: inline-block; margin: 0px auto; text-align: center;}");
+            client.println(".button { background-color: #195B6A; border: none; color: white; padding: 16px 40px;");
+            client.println("text-decoration: none; font-size: 30px; margin: 2px; cursor: pointer;}");
+            client.println(".button2 {background-color: #77878A;}</style></head>");
+            
+            // Web Page Heading
+            client.println("<body><h1>ESP8266 Web Server</h1>");
+            
+            // Display current state, and ON/OFF buttons for GPIO 5  
+            client.println("<p>GPIO 5 - State " + output5State + "</p>");
+            // If the output5State is off, it displays the ON button       
+            if (output5State=="off") {
+              client.println("<p><a href=\"/5/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/5/off\"><button class=\"button button2\">OFF</button></a></p>");
+            } 
+               
+            // Display current state, and ON/OFF buttons for GPIO 4  
+            client.println("<p>GPIO 4 - State " + output4State + "</p>");
+            // If the output4State is off, it displays the ON button       
+            if (output4State=="off") {
+              client.println("<p><a href=\"/4/on\"><button class=\"button\">ON</button></a></p>");
+            } else {
+              client.println("<p><a href=\"/4/off\"><button class=\"button button2\">OFF</button></a></p>");
+            }
+            client.println("</body></html>");
+            
+            // The HTTP response ends with another blank line
+            client.println();
+            // Break out of the while loop
+            break;
+          } else { // if you got a newline, then clear currentLine
+            currentLine = "";
+          }
+        } else if (c != '\r') {  // if you got anything else but a carriage return character,
+          currentLine += c;      // add it to the end of the currentLine
+        }
+      }
+    }
+    // Clear the header variable
+    header = "";
+    // Close the connection
+    client.stop();
+    Serial.println("Client disconnected.");
+    Serial.println("");
+  }
 }

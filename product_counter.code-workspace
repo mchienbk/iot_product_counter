@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "arduino"
+		},
+		{
+			"name": "wifi",
+			"path": "wifi"
+		}
+	],
+	"settings": {}
+}
