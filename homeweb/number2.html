@@ -1,0 +1,84 @@
+<html>
+<body>
+<style>
+    table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+th, td {
+    padding: 15px;
+}
+
+table {
+    border-spacing: 5px;
+}
+
+</style>
+
+<script src="https://www.gstatic.com/firebasejs/4.1.2/firebase.js"></script>
+<script>
+//   // Initialize Firebase
+//   var config = {
+//     apiKey: "AIzaSyDr2Im1C1lQvrxuQocW4ul69MKwRfc5g6g",
+//     authDomain: "denuncias-app.firebaseapp.com",
+//     databaseURL: "https://denuncias-app.firebaseio.com",
+//     projectId: "denuncias-app",
+//     storageBucket: "denuncias-app.appspot.com",
+//     messagingSenderId: "885651585540"
+//   };
+
+    /* Firebase Config ------------------------------------------------ */
+    const firebaseConfig = {
+      apiKey: "AIzaSyB1sc8isgSpTRwWyGcbx-7l2PSwyoasIhU",
+      authDomain: "wash-station.firebaseapp.com",
+      databaseURL: "https://wash-station.firebaseio.com",
+      projectId: "wash-station",
+      storageBucket: "wash-station.appspot.com",
+      messagingSenderId: "376026636596",
+      appId: "1:376026636596:web:fe7b3c48cb316dedb4c561",
+      measurementId: "G-G8SDV325E7"
+    };
+
+  firebase.initializeApp(config);
+</script>
+
+<head>
+    <title>Denuncias Municipales ASDE</title>
+</head>
+
+<table style="width:100%" id="ex-table">
+    <tr id="tr">
+      <th>Tipo de la Denuncia:</th>
+      <th>Dirección:</th> 
+      <th>Descripción:</th>
+      <th>Correo:</th>
+      <th>Creda por:</th>
+      <th>Imagen</th>
+      <th>Lat - Long</th>
+   </table> 
+  
+  <script>
+      var database = firebase.database();
+      database.ref().once('value', function(snapshot){
+          if(snapshot.exists()){
+              var content = '';
+              snapshot.forEach(function(data){
+                  var val = data.val();
+                  content +='<tr>';
+                  content += '<td>' + val.descripcion + '</td>';
+                  content += '<td>' + val.direccion + '</td>';
+                  content += '<td>' + val.estado + '</td>';
+                  content += '<td>' + val.imagen + '</td>';
+                  content += '<td>' + val.tipo + '</td>';
+                  content += '<td>' + val.udisplayName + '</td>';
+                  content += '<td>' + val.uemail + '</td>';
+                  content += '</tr>';
+              });
+              $('#ex-table').append(content);
+          }
+      });
+  </script>
+
+</body>
+</html>

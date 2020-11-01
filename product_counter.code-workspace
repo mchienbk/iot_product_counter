@@ -6,6 +6,13 @@
 		{
 			"name": "wifi",
 			"path": "wifi"
+		},
+		{
+			"path": "homeweb"
+		},
+		{
+			"name": "esp8266",
+			"path": "esp8266"
 		}
 	],
 	"settings": {}
