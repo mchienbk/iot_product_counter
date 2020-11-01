@@ -1,0 +1,255 @@
+/* ESP8266 IO control by Firebase and Websever with Smartconfig*/
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+#include "FirebaseESP8266.h"
+#include "ESPAsyncUDP.h"
+
+
+#define FIREBASE_HOST "your-project.firebaseio.com"
+#define FIREBASE_AUTH "06dEpqanFg***************qAwnQLwLI"
+
+#define LED1 D0
+#define LED2 D1
+#define LED3 D2
+#define LED4 D3
+
+// #define WIFI_SSID "freenet"
+// #define WIFI_PASSWORD "123456789"
+
+const char * WIFI_SSID = "freenet";
+const char * WIFI_PASSWORD = "123456789";
+
+int i = 0;
+
+FirebaseData firebaseData;
+FirebaseJson jsonStr;
+
+ESP8266WebServer server(80);
+
+AsyncUDP udp;
+
+String fireStatus = ""; // Led status received
+
+
+void handleRoot()
+{
+  // html string code for dislay
+  String s = "<html xmlns='http://www.w3.org/1999/xhtml'>";
+  s += "<head>";
+  s += "<meta charset='UTF-8'>";
+  s += "<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">";
+  s += "<script src=\"https://code.jquery.com/jquery-2.1.3.min.js\"></script>";
+  s += "<link rel=\"stylesheet\" href=\"https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css\">";
+  s += "</head>";
+  s += "<div class=\"container\">";
+  s += "<center><h3>INTERNET CONTROLER</h3>";
+  s += "<div class=\"row\">";
+  s += "<table>";
+  s += "<tr>";
+  s += "<td>LED 1</td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED1' value='ON' ></form></td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED1' value='OFF' ></form></td>";
+  s += "</tr>";
+  s += "<tr>";
+  s += "<td>LED 2</td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED2' value='ON' ></form></td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED2' value='OFF' ></form></td>";
+  s += "</tr>";
+  s += "<tr>";
+  s += "<td>LED 3</td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED3' value='ON' ></form></td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED3' value='OFF' ></form></td>";
+  s += "</tr>";
+  s += "<tr>";
+  s += " <td>LED 4</td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED4' value='ON' ></form></td>";
+  s += "<td><form menthod='get'><input class='button' type='submit' name='LED4' value='OFF' ></form></td>";
+  s += "</tr>";
+  s += "</table>";
+  s += "</center>";
+  s += "</html>";
+  // end html
+
+  server.send(200, "text/html", s);   // send data to client.
+
+  if (server.hasArg("LED1")) {        // check receive data for LED1
+    String led1 = server.arg("LED1"); // get data via LED1
+    Serial.println("LED1=");
+    Serial.println(led1);
+    if (led1 == "OFF")                // ON-function
+      digitalWrite(LED1, HIGH);       // turn on LED
+    else
+      digitalWrite(LED1, LOW);        // turn off LED
+  }
+
+  if (server.hasArg("LED2")){
+    String led2 = server.arg("LED2");
+    Serial.println("LED2=");
+    Serial.println(led2);
+    if (led2 == "OFF"){
+      digitalWrite(LED2, HIGH);
+      Serial.println("LED dang on");
+    }
+    else{
+      Serial.println("LED dang off");
+      digitalWrite(LED2, LOW);
+    }
+  }
+
+  if (server.hasArg("LED3")){
+    String led3 = server.arg("LED3");
+    Serial.println(led3);
+    if (led3 == "OFF")
+      digitalWrite(LED3, HIGH);
+    else
+      digitalWrite(LED3, LOW);
+  }
+
+  if (server.hasArg("LED4")){
+    String led4 = server.arg("LED4");
+    Serial.println(led4);
+    if (led4 == "OFF")
+      digitalWrite(LED4, HIGH);
+    else
+      digitalWrite(LED4, LOW);
+  }
+}
+
+void handleNotFound()
+{
+  String message = "File Not Found\n\n";
+  message += "URI: ";
+  message += server.uri();
+  message += "\nMethod: ";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
+  message += "\nArguments: ";
+  message += server.args();
+  message += "\n";
+  for (uint8_t i = 0; i < server.args(); i++){
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+  }
+  server.send(404, "text/plain", message);
+}
+
+void setup()
+{
+  Serial.begin(115200);
+  delay(500);
+  Serial.println("Booting... Please wait");
+  delay(1000);
+
+  pinMode(LED_BUILTIN, OUTPUT);
+  pinMode(LED1, OUTPUT);
+  pinMode(LED2, OUTPUT);
+  pinMode(LED3, OUTPUT);
+  pinMode(LED4, OUTPUT);
+
+  digitalWrite(LED_BUILTIN, HIGH);
+  digitalWrite(LED1, HIGH);
+  digitalWrite(LED2, HIGH);
+  digitalWrite(LED3, HIGH);
+  digitalWrite(LED4, HIGH);
+
+  //Change wifi mode
+  WiFi.mode(WIFI_STA);
+
+  // Connect to wifi
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  Serial.print("Connecting to ");
+  Serial.print(WIFI_SSID);
+
+
+  if (udp.connect(IPAddress(192, 168, 1, 100), 1234)){
+    Serial.println("UDP connected");
+    udp.onPacket([](AsyncUDPPacket packet) {
+      Serial.print("UDP Packet Type: ");
+      Serial.print(packet.isBroadcast() ? "Broadcast" : packet.isMulticast() ? "Multicast" : "Unicast");
+      Serial.print(", From: ");
+      Serial.print(packet.remoteIP());
+      Serial.print(":");
+      Serial.print(packet.remotePort());
+      Serial.print(", To: ");
+      Serial.print(packet.localIP());
+      Serial.print(":");
+      Serial.print(packet.localPort());
+      Serial.print(", Length: ");
+      Serial.print(packet.length());
+      Serial.print(", Data: ");
+      Serial.write(packet.data(), packet.length());
+      Serial.println();
+      //reply to the client
+      packet.printf("Got %u bytes of data", packet.length());
+    });
+    //Send unicast
+    udp.print("Hello Server!");
+  }
+
+  // Connect to firebase
+  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  // Test set string value
+  if (Firebase.setString(firebaseData, "message", "hello world") != 1){
+    Serial.print("setting /message failed:");
+    Serial.println(firebaseData.errorReason());
+    return;
+  }
+  delay(1000);
+
+  // Test JSON
+  for (uint8_t i = 0; i < 30; i++){
+    //jsonStr = "{\"Data1\":" + String(i + 1) + ",\"Data2\":\"" + String(i + 100) + "\"}";
+
+    if (Firebase.pushJSON(firebaseData, "/Test/Int", jsonStr)){
+      Serial.println("PASSED");
+      Serial.println("PATH: " + firebaseData.dataPath());
+      Serial.print("PUSH NAME: ");
+      Serial.println(firebaseData.pushName());
+      Serial.println("------------------------------------");
+      Serial.println();
+    }
+    else{
+      Serial.println("FAILED");
+      Serial.println("REASON: " + firebaseData.errorReason());
+      Serial.println("------------------------------------");
+      Serial.println();
+    }
+  }
+
+  // Firebase Set Led status
+  Firebase.setString(firebaseData, "LED_STATUS", "OFF");
+
+  server.on("/", handleRoot);
+
+  server.on("/inline", [](){
+    server.send(200, "text/plain", "this works as well");
+  });
+
+  server.onNotFound(handleNotFound);
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop()
+{
+  // Server handle
+  server.handleClient();
+
+  //Send broadcast on port 1234
+  udp.broadcastTo("Anyone here?", 1234);
+
+  // Get data from firebase
+  fireStatus = Firebase.getString(firebaseData, "LED_STATUS");
+  if (fireStatus == "ON"){
+    Serial.println("Led Turned ON");
+    digitalWrite(LED_BUILTIN, LOW);
+  }
+  else if (fireStatus == "OFF"){
+    Serial.println("Led Turned OFF");
+    digitalWrite(LED_BUILTIN, HIGH);
+  }
+  else{
+    Serial.println("Wrong Credential! Please send ON/OFF");
+  }
+
+}
