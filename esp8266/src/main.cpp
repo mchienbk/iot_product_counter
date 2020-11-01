@@ -12,8 +12,9 @@
 FirebaseData firebaseData;
 FirebaseJson jsonStr;
 
-String fireStatus = ""; // Led status received
+int ledStatus = 0; // Led status received
 
+int data1, data2, data3;
 int i = 0;
 // #define LED 2
 
@@ -53,28 +54,43 @@ void setup()
   }
   delay(1000);
   // Firebase Set Led status
-  Firebase.setString(firebaseData, "LED_STATUS", "OFF");
+  Firebase.setBool(firebaseData, "LED_STATUS", 0);
+  delay(1000);
+
 }
 
 void loop()
 {
 
   // Get data from firebase
-  fireStatus = Firebase.getString(firebaseData, "LED_STATUS");
-  if (fireStatus == "ON"){
+  if (Firebase.getBool(firebaseData, "LED_STATUS"))
+    ledStatus = firebaseData.boolData();
+  if (ledStatus == 0){
     Serial.println("Led Turned ON");
     digitalWrite(LED_BUILTIN, LOW);
   }
-  else if (fireStatus == "OFF"){
+  else{
     Serial.println("Led Turned OFF");
     digitalWrite(LED_BUILTIN, HIGH);
   }
-  else{
-    Serial.println("Wrong Credential! Please send ON/OFF");
-  }
 
-  i += 1;
-  Firebase.setInt(firebaseData, "COUNT", i);
+  if(Firebase.getInt(firebaseData, "/userdata/port1"))
+    data1 = firebaseData.intData();
+  if(Firebase.getInt(firebaseData, "/userdata/port2"))
+    data2 = firebaseData.intData();
+  if(Firebase.getInt(firebaseData, "/userdata/port3"))
+    data3 = firebaseData.intData();
+
+  Serial.println(data1);
+  Serial.println(data2);
+  Serial.println(data3);
+
+  data1+=1;
+  data2+=2;
+  data3+=3;
+  Firebase.setInt(firebaseData, "/userdata/port1", data1);
+  Firebase.setInt(firebaseData, "/userdata/port2", data2);
+  Firebase.setInt(firebaseData, "/userdata/port3", data3);
 
   delay(1000);
 

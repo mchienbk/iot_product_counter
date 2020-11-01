@@ -3,16 +3,16 @@
 
 <head>
 
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=chrome">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=chrome">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title>wash-station-webapp</title>
+  <title>wash-station-webapp</title>
 
   <!-- <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">   -->
   <!-- BOOTSTRAP STYLES-->
-  <link href="css/bootstrap.css" rel="stylesheet" >
-  <link href="style.css" rel="stylesheet" >
+  <link href="css/bootstrap.css" rel="stylesheet">
+  <link href="style.css" rel="stylesheet">
 
 </head>
 
@@ -22,11 +22,9 @@
 
   <!-- jQuery -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-
   <!-- Bootstrap JS -->
   <!-- <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous"></script> -->
   <script src="https://www.gstatic.com/firebasejs/4.7.0/firebase.js"></script>
-
 
   <!-- Data Initial -->
   <script>
@@ -48,68 +46,21 @@
     /* Initialize firebase data ---------------------------------------- */
     firebase.initializeApp(firebaseConfig);
     var database = firebase.database();
-   
-    /* Getting the text value from the database ------------------------- */
-    // var urlRef = firebase.database().ref('/userdata/').once('value').then(function(snapshot) {
-    //   data1 = (snapshot.val().port1);
-    //   data2 = (snapshot.val().port2);
-    //   data3 = (snapshot.val().port3);
-    //   d1 = 3;
-    //   d2 = 5;
-    //   d3 = 8;
-    //   // data1 = Number(d1);
 
-    //   console.log(data1);
-    //   console.log(data2);
-    //   console.log(data3);
-
-    //   // ...
-    // });
-
-
-
-    //     console.log(child.key+": "+child.val());
-    //     data1 = child.val();
-    //   });
-    // });
-    // data1.on('value', function(snapshot) {
-    //   updateStarCount(postElement, snapshot.val());
-    // });
-    /* Update Data ---------------------------------------- */
-    // var firebaseOrdersCollection = database.ref().child('userdata');
-
-    // firebaseOrdersCollection.on(function(orders) {
-          
-    //       var allOrdersHtml = "";
-    //       orders.forEach(function(firebaseOrderReference){
-
-    //       var order = firebaseOrderReference.val();
-    //       console.log(order);
-    //       var individialOrderHtml =	`<div class='item'>
-    //                       <p>Port1: `+order.port1+`</p>
-    //                       <p>Port2: `+order.port2+`</p>
-    //                       <p>Port3: `+order.port3+`</p>
-    //                       </div>`;
-            
-    //         allOrdersHtml = allOrdersHtml + individialOrderHtml;
-    //       });
-            
-    //       $('#previousOrders').html(allOrdersHtml);
-    // });
-
-    function pushTestData(){
-      var today = new Date();  
+    function pushTestData() {
+      var today = new Date();
       var time = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
-      firebaseOrdersCollection.push('Test Data - ' + time); 
-      window.alert('Data - '+time);
+      firebaseOrdersCollection.push('Test Data - ' + time);
+      window.alert('Data - ' + time);
     }
-     
-    function writeUserData() {
+
+    function resetUserData() {
       firebase.database().ref('userdata/').set({
-        port1: 2,
-        port2: 3,
-        port3: 5
+        port1: 0,
+        port2: 0,
+        port3: 0
       });
+      window.location.reload();
     }
 
   </script>
@@ -118,7 +69,7 @@
     <div class="jumbotron">
       <blockquote>
         <strong>Life </strong> <i> is </i> <mark>very </mark> </br>
-        <b>Difficult</b> <i>than</i> <b>we think</b> 
+        <b>Difficult</b> <i>than</i> <b>we think</b>
       </blockquote> </br></br></br></br></br></br></br></br>
     </div>
   </div>
@@ -127,36 +78,17 @@
   <div class="container">
     <div class="jumbotron">
       <!-- Table -->
-      <table style="width:100%" id="ex-table" >
+      <table style="width:100%" id="ex-table">
         <tr>
           <th>No.</th>
           <th>Port</th>
           <th>Quantity</th>
         </tr>
-
-        <!-- <tr>
-          <td>1</td>
-          <td>Smith</td>
-          <td><script>document.write(data1);</script></td>
-        </tr>
-
-        <tr>
-          <td>2</td>
-          <td>Jackson</td>
-          <td><script>document.write(data2);</script></td>
-        </tr>
-
-        <tr>
-          <td>3</td>
-          <td>Jackson</td>
-          <td><script>document.write(data3);</script></td>
-        </tr>  -->
-
       </table>
 
       <script>
-      /* Getting the text value from the database ------------------------- */
-        var urlRef = firebase.database().ref('/userdata/').once('value').then(function(snapshot) {
+        /* Getting the text value from the database ------------------------- */
+        var urlRef = firebase.database().ref('/userdata/').once('value').then(function (snapshot) {
           var content = '';
 
           data1 = (snapshot.val().port1);
@@ -166,34 +98,31 @@
           // console.log(data1);
           // console.log(data2);
           // console.log(data3);
-          
-          content +='<tr>';
+
+          content += '<tr>';
           content += '<td>' + 1 + '</td>';
           content += '<td>' + 1 + '</td>';
           content += '<td>' + data1 + '</td>';
           content += '</tr>';
 
-          content +='<tr>';
+          content += '<tr>';
           content += '<td>' + 2 + '</td>';
           content += '<td>' + 2 + '</td>';
           content += '<td>' + data2 + '</td>';
           content += '</tr>';
 
-          content +='<tr>';
+          content += '<tr>';
           content += '<td>' + 3 + '</td>';
           content += '<td>' + 3 + '</td>';
           content += '<td>' + data3 + '</td>';
           content += '</tr>';
 
           $('#ex-table').append(content);
-          // ...
         });
+      </script>
 
-    </script>
-
-
-      
     </div>
+
   </div>
 
   <!-- Controller box -->
@@ -201,10 +130,10 @@
     <div class="jumbotron">
       <!-- <label> Control box: </label> -->
       <form id="ctrl_form">
-        
+
         <button type="button" class="btn btn-info" onclick=window.location.reload()>Refresh Data</button>
-        <button type="button" class="btn btn-info" onclick=window.print()         >See all Data</button>
-        <button type="button" class="btn btn-info" onclick=writeUserData()         >Send Test</button>
+        <button type="button" class="btn btn-info" onclick=window.print()>See all Data</button>
+        <button type="button" class="btn btn-info" onclick=resetUserData()>Clear Data</button>
 
       </form>
 
@@ -216,17 +145,5 @@
 
 
 </body>
+
 </html>
-
-
-  
-
-
-
-
-
-
-
-
-
-
