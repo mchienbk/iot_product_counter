@@ -16,7 +16,7 @@ int ledStatus = 0; // Led status received
 
 int data1, data2, data3;
 int i = 0;
-// #define LED 2
+char incomingByte;
 
 void setup()
 {
@@ -63,35 +63,50 @@ void loop()
 {
 
   // Get data from firebase
-  if (Firebase.getBool(firebaseData, "LED_STATUS"))
-    ledStatus = firebaseData.boolData();
-  if (ledStatus == 0){
-    Serial.println("Led Turned ON");
-    digitalWrite(LED_BUILTIN, LOW);
+  // if (Firebase.getBool(firebaseData, "LED_STATUS"))
+  //   ledStatus = firebaseData.boolData();
+  // if (ledStatus == 0){
+  //   Serial.println("Led Turned ON");
+  //   digitalWrite(LED_BUILTIN, LOW);
+  // }
+  // else{
+  //   Serial.println("Led Turned OFF");
+  //   digitalWrite(LED_BUILTIN, HIGH);
+  // }
+
+  if (Serial.available() > 0) {
+    // read the incoming byte:
+    incomingByte = Serial.read();
+    // say what you got:
+    Serial.print("Received: ");
+    Serial.println(incomingByte);
+
+    if(Firebase.getInt(firebaseData, "/userdata/port1"))
+      data1 = firebaseData.intData();    
+    if(Firebase.getInt(firebaseData, "/userdata/port2"))
+      data2 = firebaseData.intData();
+    if(Firebase.getInt(firebaseData, "/userdata/port3"))
+      data3 = firebaseData.intData();
+
+    switch (incomingByte)
+    {
+    case 49:
+      data1++;
+      Firebase.setInt(firebaseData, "/userdata/port1", data1);
+      break;
+    case 50:
+      data2++;
+      Firebase.setInt(firebaseData, "/userdata/port2", data2);
+      break;
+    case 51:
+      data3++;
+      Firebase.setInt(firebaseData, "/userdata/port3", data3);
+      break;    
+    default:
+      break;
+    }   
+    Serial.println(data1);
+    Serial.println(data2);
+    Serial.println(data3);
   }
-  else{
-    Serial.println("Led Turned OFF");
-    digitalWrite(LED_BUILTIN, HIGH);
-  }
-
-  if(Firebase.getInt(firebaseData, "/userdata/port1"))
-    data1 = firebaseData.intData();
-  if(Firebase.getInt(firebaseData, "/userdata/port2"))
-    data2 = firebaseData.intData();
-  if(Firebase.getInt(firebaseData, "/userdata/port3"))
-    data3 = firebaseData.intData();
-
-  Serial.println(data1);
-  Serial.println(data2);
-  Serial.println(data3);
-
-  data1+=1;
-  data2+=2;
-  data3+=3;
-  Firebase.setInt(firebaseData, "/userdata/port1", data1);
-  Firebase.setInt(firebaseData, "/userdata/port2", data2);
-  Firebase.setInt(firebaseData, "/userdata/port3", data3);
-
-  delay(1000);
-
 }

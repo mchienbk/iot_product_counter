@@ -31,4 +31,4 @@ void process_2(void);
 void process_3(void);
 
 
-void senddata(int data);
+void senddata(char data);

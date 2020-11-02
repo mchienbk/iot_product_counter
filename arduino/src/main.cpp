@@ -8,7 +8,6 @@ void setup()
   pinMode(P_IN_02, INPUT);
   pinMode(P_IN_03, INPUT);
 
-
   pinMode(P_OUT_01, OUTPUT);
   pinMode(P_OUT_02, OUTPUT);
   pinMode(P_OUT_03, OUTPUT);
@@ -22,42 +21,45 @@ void setup()
   attachInterrupt(INT_CN0, get_btn_id, LOW); // pin 2
 
   Serial.begin(9600);
-  Serial.println("You are welcome");
-
+  // Serial.println("You are welcome");
 
 }
 void loop()
 {
-  switch(btn_id){
-    case 1:
-      process_sst = true;
-      process_1();
-      senddata(1);
-      process_sst = false;
-      break;
-    case 2:
-      process_sst = true;
-      process_2();
-      senddata(2);
-      process_sst = false;
-      break;
-    case 3:
-      process_sst = true;
-      process_3();
-      senddata(3);
-      process_sst = false;
-      break;
+  // switch(btn_id){
+  //   case 1:
+  //     process_sst = true;
+  //     process_1();
+  //     senddata(49);
+  //     process_sst = false;
+  //     break;
+  //   case 2:
+  //     process_sst = true;
+  //     process_2();
+  //     senddata(50);
+  //     process_sst = false;
+  //     break;
+  //   case 3:
+  //     process_sst = true;
+  //     process_3();
+  //     senddata(51);
+  //     process_sst = false;
+  //     break;
 
-    default:
-      // process_sst = false;
-      // digitalWrite(P_OUT_01, HIGH);
-      // digitalWrite(P_OUT_02, HIGH);
-      // digitalWrite(P_OUT_03, HIGH);
-      break;
-  }
-  
-  // digitalWrite(pin, state);
-  delay(1000);
+  //   default:
+  //     break;
+  // }
+  // delay(100);
+
+
+  senddata(49);
+  delay(2000);
+
+  senddata(50);
+  delay(2000);
+
+  senddata(51);
+  delay(2000);
 }
 
 // Get button which pressed
@@ -105,11 +107,9 @@ void process_3(void){
   btn_id = 0;
 }
 
-
-
-void senddata(int data){
+void senddata(char data){
   check_rcv = 0;
-  Serial.print(data, DEC);
+  Serial.print(data);
   // while(true){
   //   if (Serial.available() > 0) {
   //     check_rcv++;
