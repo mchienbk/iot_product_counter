@@ -114,7 +114,6 @@ void process_1(void){
   digitalWrite(P_OUT_04, LOW);      // Output LOW
   delay(5000); 
   digitalWrite(P_OUT_04, HIGH);     // Output HIGH
-  delay(5000);
 }
 
 // Code for prosess 02
@@ -131,7 +130,6 @@ void process_2(void){
   digitalWrite(P_OUT_08, LOW);      // Output LOW
   delay(5000); 
   digitalWrite(P_OUT_08, HIGH);     // Output HIGH
-  delay(5000); 
 }
 
 // Code for prosess 03
@@ -140,7 +138,6 @@ void process_3(void){
   delay(5000);
   digitalWrite(P_OUT_09, HIGH);     // Output HIGH
   digitalWrite(P_OUT_10, LOW);      // Output LOW
-  delay(5000);
 }
 
 void senddata(char data){
